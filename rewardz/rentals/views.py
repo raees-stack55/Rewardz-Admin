@@ -8,22 +8,38 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from books.models import Book
 from .models import Rental
+from django.db import transaction
+from django.contrib import messages
+from django.utils import timezone
+from datetime import timedelta
+from decimal import Decimal
+import requests
+import urllib.parse
+
 
 def fetch_book_data(title: str):
+    """
+    Fetch author name and number of pages for a book from OpenLibrary.
+    Returns:
+        pages (int), author (str)
+    Fallbacks:
+        pages = 100
+        author = "Unknown"
+    """
     try:
         clean_title = urllib.parse.quote(title.strip())
         search_url = f"https://openlibrary.org/search.json?title={clean_title}"
-
         headers = {
             "User-Agent": "RewardzAdminPanel/1.0 (contact: aditya@gmail.com)"
         }
 
-        res = requests.get(search_url, headers=headers, timeout=7)
-        res.raise_for_status()
-        data = res.json()
-
+        response = requests.get(search_url, headers=headers, timeout=7)
+        response.raise_for_status()
+        data = response.json()
         docs = data.get("docs", [])
+
         if not docs:
+            # Book not found
             return 100, "Unknown"
 
         doc = docs[0]
@@ -31,21 +47,20 @@ def fetch_book_data(title: str):
         author_list = doc.get("author_name") or ["Unknown"]
         author = author_list[0]
 
-        edition_keys = doc.get("edition_key", [])
-        if not edition_keys:
+        work_key = doc.get("key")
+        if not work_key:
             return 100, author
 
-        edition_id = edition_keys[0]
-        edition_url = f"https://openlibrary.org/books/{edition_id}.json"
+        editions_url = f"https://openlibrary.org{work_key}/editions.json?limit=10"
+        editions_res = requests.get(editions_url, headers=headers, timeout=7)
+        editions_res.raise_for_status()
+        editions_data = editions_res.json()
+        editions = editions_data.get("entries", [])
 
-        edition_res = requests.get(edition_url, headers=headers, timeout=7)
-        edition_res.raise_for_status()
-        edition_data = edition_res.json()
-
-        pages = edition_data.get("number_of_pages")
-
-        if pages:
-            return int(pages), author
+        for edition in editions:
+            pages = edition.get("number_of_pages")
+            if pages:
+                return int(pages), author
 
         return 100, author
 
@@ -53,58 +68,6 @@ def fetch_book_data(title: str):
         print("OpenLibrary API Error:", e)
         return 100, "Unknown"
 
-
-# def fetch_book_data(title: str):
-#     try:
-#         clean_title = urllib.parse.quote(title.strip())
-#         headers = {
-#             "User-Agent": "RewardzAdminPanel/1.0 (contact: aditya@gmail.com)"
-#         }
-
-#         # -------- OPENLIBRARY SEARCH --------
-#         search_url = f"https://openlibrary.org/search.json?title={clean_title}"
-#         res = requests.get(search_url, headers=headers, timeout=10)
-#         res.raise_for_status()
-#         data = res.json()
-
-#         docs = data.get("docs", [])
-#         if docs:
-#             doc = docs[0]
-#             author_list = doc.get("author_name") or ["Unknown"]
-#             author = author_list[0]
-
-#             edition_keys = doc.get("edition_key", [])
-#             for edition_id in edition_keys[:5]:
-#                 try:
-#                     edition_url = f"https://openlibrary.org/books/{edition_id}.json"
-#                     edition_res = requests.get(edition_url, headers=headers, timeout=10)
-#                     edition_data = edition_res.json()
-
-#                     pages = edition_data.get("number_of_pages")
-#                     if pages:
-#                         return int(pages), author
-#                 except:
-#                     pass
-#         else:
-#             author = "Unknown"
-
-#         # -------- GOOGLE BOOKS FALLBACK --------
-#         google_url = f"https://www.googleapis.com/books/v1/volumes?q=intitle:{clean_title}"
-#         g_res = requests.get(google_url, timeout=10)
-#         g_data = g_res.json()
-
-#         items = g_data.get("items", [])
-#         if items:
-#             volume = items[0]["volumeInfo"]
-#             author = volume.get("authors", ["Unknown"])[0]
-#             pages = volume.get("pageCount", 100)
-#             return int(pages), author
-
-#         return 100, author
-
-#     except Exception as e:
-#         print("Book API Error:", e)
-#         return 100, "Unknown"
 
 
 def staff_check(user):
