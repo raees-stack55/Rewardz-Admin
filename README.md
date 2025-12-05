@@ -38,8 +38,6 @@ This project uses external APIs to fetch book information:
 
 OpenLibrary API – Primary source for book details (title, author, pages).
 
-Google Books API – Fallback if OpenLibrary fails.
-
 All API requests are handled in the backend to automatically populate book data when adding or extending rentals.
 
 ## Admin Credentials (Demo)
