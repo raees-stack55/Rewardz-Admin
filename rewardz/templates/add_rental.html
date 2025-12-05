@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1">Create New Rental</h3>
+    <p class="text-muted small mb-0">
+      Assign a book to a student (First month is free)
+    </p>
+  </div>
+
+  <span class="badge rounded-pill px-4 py-2"
+        style="background: linear-gradient(90deg, #2563eb, #1e40af);">
+    <i class="bi bi-book-half me-1"></i> New Rental
+  </span>
+</div>
+
+{% if error %}
+  <div class="alert alert-danger shadow-sm">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ error }}
+  </div>
+{% endif %}
+
+<!-- Form Card -->
+<div class="card card-shadow p-4">
+  <form method="post" onsubmit="showLoader()">
+    {% csrf_token %}
+
+    <!-- Student -->
+    <div class="mb-4">
+      <label for="student" class="form-label fw-semibold">
+        <i class="bi bi-person me-1"></i> Student
+      </label>
+
+      <select name="student" id="student" class="form-select shadow-sm" required>
+        <option value="">-- Select Student --</option>
+        {% for user in users %}
+          <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Book Title -->
+    <div class="mb-4">
+      <label for="title" class="form-label fw-semibold">
+        <i class="bi bi-book me-1"></i> Book Title
+      </label>
+
+      <input
+        type="text"
+        name="title"
+        id="title"
+        class="form-control shadow-sm"
+        placeholder="e.g. Atomic Habits, Rich Dad Poor Dad"
+        required
+      >
+
+      <div class="form-text">
+        Book data will be fetched automatically from OpenLibrary.
+      </div>
+    </div>
+
+    <!-- End Date -->
+    <div class="mb-4">
+      <label for="end_date" class="form-label fw-semibold">
+        <i class="bi bi-calendar-event me-1"></i> End Date
+      </label>
+
+      <input
+        type="date"
+        name="end_date"
+        id="end_date"
+        class="form-control shadow-sm"
+        value="{{ initial_end_date }}"
+        required
+      >
+
+      <div class="form-text text-success">
+        ✅ First month is free. Fee starts when you extend the rental.
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4">
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </a>
+
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="bi bi-check-circle me-1"></i> Create Rental
+      </button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

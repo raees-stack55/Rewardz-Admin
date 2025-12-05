@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1">Extend Rental</h3>
+    <p class="text-muted small mb-0">
+      Extend an existing book rental (First month is free)
+    </p>
+  </div>
+
+  <span class="badge rounded-pill px-4 py-2"
+        style="background: linear-gradient(90deg, #2563eb, #1e40af);">
+    <i class="bi bi-arrow-repeat me-1"></i> Extend
+  </span>
+</div>
+
+{% if error %}
+  <div class="alert alert-danger shadow-sm">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ error }}
+  </div>
+{% endif %}
+
+<!-- Form Card -->
+<div class="card card-shadow p-4">
+  <form method="post" onsubmit="showLoader()">
+    {% csrf_token %}
+
+    <!-- Rental Select -->
+    <div class="mb-4">
+      <label for="rental" class="form-label fw-semibold">
+        <i class="bi bi-journal-bookmark me-1"></i> Select Rental
+      </label>
+
+      <select name="rental" id="rental" class="form-select shadow-sm" required>
+        <option value="">-- Select Rental --</option>
+        {% for rental in rentals %}
+          <option value="{{ rental.id }}">
+            {{ rental.user.username }} — {{ rental.book.title }} (Ends: {{ rental.end_date }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Extra Months -->
+    <div class="mb-4">
+      <label for="extra_months" class="form-label fw-semibold">
+        <i class="bi bi-calendar-plus me-1"></i> Extra Months
+      </label>
+
+      <input
+        type="number"
+        name="extra_months"
+        id="extra_months"
+        class="form-control shadow-sm"
+        min="1"
+        placeholder="Enter months"
+        required
+      >
+
+      <div class="form-text text-info">
+        Fee Formula: <code>(pages / 100) × extra_months</code>. First month is free.
+      </div>
+    </div>
+
+    <!-- Django Messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} shadow-sm">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Loading Spinner -->
+    <div id="loadingBox" class="text-center d-none my-4">
+      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+      <p class="small text-muted mt-2">Updating rental...</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4">
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </a>
+
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="bi bi-arrow-repeat me-1"></i> Update Rental
+      </button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function showLoader() {
+    document.getElementById("loadingBox").classList.remove("d-none");
+  }
+</script>
+{% endblock %}
